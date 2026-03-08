@@ -25,6 +25,7 @@ export const getSessionsHandler = catchErrors(async (req, res) => {
   return res.status(OK).json(
     sessions.map((session) => ({
       ...session.toObject(),
+      // @ts-ignore
       ...(session.id === req.sessionId && { current: true }),
     }))
   );
