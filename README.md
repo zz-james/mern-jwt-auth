@@ -1,70 +1,56 @@
 # MERN JWT AUTH STARTER
 
-## Commands
+Full-stack auth app: Express 5 API + React 19 frontend.
 
-### Backend
+## Structure
 
-```bash
-cd backend
-npm run dev        # dev server with hot reload (tsx watch)
-npm run build      # compile TS to dist/
-npm start          # run compiled output
+```
+backend/   # Express 5 + MongoDB + TypeScript
+frontend/  # React 19 + Vite + Chakra UI
 ```
 
-### Frontend
+## Dev
 
 ```bash
-cd frontend
-npm run dev        # Vite dev server
-npm run build      # tsc + vite build
-npm run lint       # ESLint
-npm run preview    # preview production build
+# Start MongoDB + backend (Docker)
+docker-compose up
+
+# Backend only (requires MongoDB running)
+cd backend && npm run dev   # port 4004
+
+# Frontend
+cd frontend && npm run dev  # port 5173
 ```
 
-### Docker
+## Build
 
 ```bash
-docker-compose up  # MongoDB + API (port 4004)
+cd backend && npm run build   # tsc + esbuild → dist/
+cd frontend && npm run build  # tsc -b && vite build
 ```
 
-No tests exist yet.
+## Stack
 
-## Architecture
+**Backend:** Express 5, TypeScript, MongoDB/Mongoose, JWT, Zod, Resend (email)
+**Frontend:** React 19, React Query 5, React Router 7, Chakra UI 2, Axios
 
-MERN stack with JWT auth. Backend runs on port 4004, frontend on port 5173.
+## Auth Flow
 
-### Backend (`backend/src/`)
+- Access token (15m) + refresh token (30d) as httpOnly cookies
+- Sessions stored in MongoDB
+- Frontend axios interceptor auto-refreshes on 401 + `InvalidAccessToken`
+- `authenticate` middleware injects `userId`/`sessionId` into req
 
-Express 5 + TypeScript + MongoDB (Mongoose). ES modules (`"type": "module"`).
+## API Routes
 
-**Auth flow**: cookies-based JWT. Access token (15m) + refresh token (30d) stored as httpOnly cookies. Sessions tracked in MongoDB.
+**Public:** `POST /auth/register|login`, `GET /auth/logout|refresh`, `GET /auth/email/verify/:code`, `POST /auth/password/forgot|reset`
+**Protected:** `GET /user`, `GET /sessions`, `DELETE /sessions/:id`
 
-Key layers:
+## Key Files
 
-- `models/` — Mongoose schemas: `User`, `Session`, `VerificationCode`
-- `services/auth.service.ts` — all auth business logic (register, login, refresh, email verify, password reset)
-- `controllers/auth.controller.ts` — thin Express handlers wrapping services
-- `middleware/authenticate.ts` — validates `accessToken` cookie, injects `userId`/`sessionId` into request
-- `middleware/errorHandler.ts` — handles `AppError` and Zod validation errors
-- `utils/` — JWT (`jwt.ts`), bcrypt, cookies, email templates, `appAssert.ts` (throws typed errors), `catchErrors.ts` (async wrapper)
+- `backend/src/services/auth.service.ts` — core auth logic
+- `backend/src/middleware/authenticate.ts` — JWT validation
+- `frontend/src/config/apiClient.ts` — axios + refresh interceptor
+- `frontend/src/lib/api.ts` — API endpoint functions
 
-Routes: `POST/GET /auth/*` (public), `GET /user/*` and `GET /sessions/*` (protected, require auth middleware).
-
-Email via Resend API (`utils/sendMail.ts`). Validation via Zod.
-
-### Frontend (`frontend/src/`)
-
-React 19 + TypeScript + Vite. React Router 7, TanStack React Query 5, Chakra UI 2.
-
-- `main.tsx` — providers: Router, Chakra (dark theme), React Query
-- `App.tsx` — route definitions
-- `config/queryClient.ts` — React Query client (retries disabled)
-- `theme/` — Chakra UI customization
-
-Frontend is minimal/early-stage; backend is more complete.
-
-## Environment
-
-Backend `.env` keys: `NODE_ENV`, `APP_ORIGIN`, `MONGO_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `EMAIL_SENDER`, `RESEND_API_KEY`.
-
-In Docker, MongoDB is `mongo:27017`. For local dev without Docker, use a local MongoDB URI.
+## No tests yet.
